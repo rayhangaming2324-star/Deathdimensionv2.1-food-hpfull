@@ -1,0 +1,59 @@
+
+name: Build DeathDimension V2.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract Source
+        run: |
+          set -e
+          mkdir -p source
+
+          ZIP=$(find . -type f -name '*Source.zip' \
+            -not -path './.git/*' -print -quit)
+
+          if [ -z "$ZIP" ]; then
+            echo "Source ZIP tidak ditemukan"
+            exit 1
+          fi
+
+          unzip -oq "$ZIP" -d source
+
+          POM=$(find source -type f -name pom.xml -print -quit)
+
+          if [ -z "$POM" ]; then
+            echo "pom.xml tidak ditemukan"
+            exit 1
+          fi
+
+          echo "PROJECT_DIR=$(dirname "$POM")" >> "$GITHUB_ENV"
+
+      - name: Build Plugin
+        run: mvn -B -f "$PROJECT_DIR/pom.xml" clean package
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeathDimension-V2.1-Fixed
+          path: ${{ env.PROJECT_DIR }}/target/*.jar
+          if-no-files-found: error
