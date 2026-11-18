@@ -25,6 +25,7 @@ jobs:
           java-version: '21'
 
       - name: Extract Source
+        shell: bash
         run: |
           set -e
           mkdir -p source
